@@ -1,42 +1,49 @@
 mod matrix;
+mod data_ingester;
+
 use matrix::*;
+use data_ingester::*;
 
-use std::fs;
-// use std::fs::File;
-use std::path::Path;
+use raylib::prelude::{Color, RaylibDraw};
+use raylib::consts::{TraceLogLevel, KeyboardKey};
 
-fn read_image() -> Matrix {
-    let root = Path::new("data/");
-    let image = root.join("t10k-images-idx3-ubyte");
-    
-    let bytes = match fs::read(&image) {
-        Err(why) => panic!("couldn't read {}: {}:", image.display(), why),
-        Ok(file) => file,
-    };
+fn render_matrix(images: Vec<Matrix>) {
+// fn render_matrix() {
+    let (mut rl, thread) = raylib::init()
+        .size(800, 800)
+        .title("Matrix")
+        .log_level(TraceLogLevel::LOG_NONE)
+        .build();
 
-    // first two bytes are always zero
-    // then this should be 0x08 specifying a unsigned byte
-    // new bytes is the number of dimensions. in this file it is stored as a  
-    let magic_number = u32::from_be_bytes(bytes[0..4].try_into().unwrap());
-    assert_eq!(magic_number, 0x00000803u32);
-    
-    // this unwrap should be safe as the slice is always 4 bytes long...
-    let num_images = u32::from_be_bytes(bytes[4..8].try_into().unwrap());
-    let rows = u32::from_be_bytes(bytes[8..12].try_into().unwrap());
-    let cols = u32::from_be_bytes(bytes[12..16].try_into().unwrap());
+    const BLOCK_SIZE: i32 = 16;
 
-    println!("num_images: {:?}", num_images); // image index
-    println!("rows: {:?}", rows); // image dimension 1
-    println!("cols: {:?}", cols); // image dimension 2
+    let mut index : usize = 0;
 
-    for byte in bytes[4..733].iter() {
-        print!("0x{:02X} ", byte);
+    while !rl.window_should_close() {
+        if rl.is_key_pressed(KeyboardKey::KEY_SPACE){
+            index += 1;
+        }
+
+        let mut d = rl.begin_drawing(&thread);
+
+        d.clear_background(Color::BLACK);
+
+        let m1 : &Matrix = &images[index];
+
+        for row in 0..m1.rows as i32 {
+            for col in 0..m1.cols as i32{
+                d.draw_rectangle(
+                    col * BLOCK_SIZE, // x, these are swapped on the matrix
+                    row * BLOCK_SIZE, // y
+                    BLOCK_SIZE, // width
+                    BLOCK_SIZE, // height
+                    Color::WHITE.alpha(
+                        m1.get(row as usize, col as usize) / 255.0)
+                    );
+                // d.draw_text(&format!("({:02},{:02})", row, col), col*BLOCK_SIZE+BLOCK_SIZE/2, row*BLOCK_SIZE+BLOCK_SIZE/2, 1, Color::GREEN);
+            }
+        }
     }
-    println!("");
-    
-    let picture = Vec::<f32>::from(bytes[16..745]);
-
-    Matrix::new(27, 27, picture)
 }
 
 fn main() {
@@ -57,5 +64,6 @@ fn main() {
     let lambda = |x : f32| -> f32 { 1.0 / (1.0 + f32::exp(-x)) };
     println!("Apply sigmoid(m1): {:?}", matrix_apply(&m1, &lambda));
 
-    read_image();
+    let picture = read_image();
+    render_matrix(picture);
 }

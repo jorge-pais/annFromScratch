@@ -1,8 +1,8 @@
 #[derive(Debug)]
 pub struct Matrix {
     data: Vec<f32>,
-    rows: usize,
-    cols: usize
+    pub rows: usize,
+    pub cols: usize
 }
 
 impl Matrix{
