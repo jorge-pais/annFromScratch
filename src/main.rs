@@ -1,8 +1,10 @@
 mod matrix;
 mod data_ingester;
+mod neural_network;
 
 use matrix::*;
 use data_ingester::*;
+// use neural_network::*;
 
 use std::path::Path;
 
@@ -73,6 +75,8 @@ fn main() {
 
     assert_eq!(picture.len(), labels.rows, "Training set and labels don't match");
 
+    println!("Training data successfully loaded");
+
     // sigmoid activation function and the derivative
     let sigmoid = |x : f32| -> f32 { 1.0 / (1.0 + f32::exp(-x)) };
     let sigmoid_prime = |x : f32| -> f32 { x * (1.0 - x) };
@@ -81,14 +85,16 @@ fn main() {
     let inputs : usize = 28*28;
     let hidden : usize = 200;
     let output : usize = 10;
-    let learning_rate : f32 = 0.10;
+    let learning_rate : f32 = 0.01;
 
     let mut hidden_weights = Matrix::random(hidden, inputs);
     let mut output_weights = Matrix::random(output, hidden);
 
+    println!("Weights initialized, beggining training");
+
     for index in 0..picture.len() {
         let input_data = matrix_flatten(&picture[index]);
-        let mut target_encoded = vec![0.0; 10]; 
+        let mut target_encoded = vec![0.01; 10]; 
         target_encoded[labels.get(index, 0) as usize] = 1.0; // hot one encoded
 
         // forward propagation
@@ -105,7 +111,7 @@ fn main() {
                 &dot(&multiply(&output_error, &matrix_apply(&output_out, &sigmoid_prime)),
                     &transpose(&hidden_out)
                 ),
-                -learning_rate 
+                learning_rate 
             )
         );
 
@@ -114,7 +120,7 @@ fn main() {
                 &dot(&multiply(&hidden_error, &matrix_apply(&hidden_out, &sigmoid_prime)),
                     &transpose(&input_data)
                 ),
-                -learning_rate 
+                learning_rate 
             )
         );
 
@@ -122,9 +128,7 @@ fn main() {
         for i in 0..output_error.rows {
             error += output_error.get(i,0).powf(2.0);
         }
-
-        error = error / 2.0;
-
+        error = error / 10.0;
         println!("Training step {:} error {:}", index, error);
     }
 
