@@ -35,6 +35,11 @@ impl Matrix{
     pub fn get(&self, r: usize, c: usize) -> f32 {
         self.data[r * self.cols + c]
     }
+
+    pub fn get_reshaped(&self, r: usize, c: usize, r_shape: usize, c_shape: usize) -> f32 {
+        assert!(r_shape*c_shape == self.rows * self.cols, "Invalid reshape");
+        self.data[r * c_shape + c]
+    }
 }
 
 // add two matrices in-place

@@ -38,7 +38,7 @@ pub fn new(inputs: usize, hidden: usize, outputs: usize) -> NeuralNetwork {
 
 // activation function
 fn sigmoid(x: f32) -> f32{
-    1.0/(1.0/f32::exp(-x))
+    1.0/(1.0 + f32::exp(-x))
 }
 // activation derivative
 fn sigmoid_prime(x: f32) -> f32{
@@ -51,14 +51,14 @@ pub fn fit(&mut self, training_data: Vec<Matrix>, training_labels: Vec<Matrix>, 
 
     assert_eq!(training_data.len(), training_labels.len(), "Training set and labels are not the same length");
 
-    for _epoch in 0..epochs {
+    for epoch in 0..epochs {
         for index in 0..training_data.len() {
             // forward propagation
             dot_into(&self.hidden_weights, &training_data[index], &mut self.hidden_out);
             matrix_apply_inplace(&mut self.hidden_out, &NeuralNetwork::sigmoid);
 
             dot_into(&self.output_weights, &self.hidden_out, &mut self.output_out);
-            matrix_apply_inplace(&mut self.hidden_out, &NeuralNetwork::sigmoid);
+            matrix_apply_inplace(&mut self.output_out, &NeuralNetwork::sigmoid);
 
             // find errors
             subtract_into(&training_labels[index], &self.output_out, &mut self.output_error);
@@ -83,8 +83,26 @@ pub fn fit(&mut self, training_data: Vec<Matrix>, training_labels: Vec<Matrix>, 
             dot_into(&buf3, &transpose(&training_data[index]), &mut buf4);
             scale_assign(&mut buf4, learning_rate);
             add_assign(&mut self.hidden_weights, &buf4);
+
+            println!("Epoch {:}/{:} training step {:}/{:}", epoch+1, epochs, index+1, training_data.len());
         }
     }
+}
+
+pub fn predict(&self, m1: &Matrix) -> Matrix {
+
+    let mut buf1 = Matrix::new_empty(self.hidden, 1);
+
+    // forward propagation
+    dot_into(&self.hidden_weights, &m1, &mut buf1);
+    matrix_apply_inplace(&mut buf1, &NeuralNetwork::sigmoid);
+
+    let mut buf2 = Matrix::new_empty(self.outputs, 1);
+
+    dot_into(&self.output_weights, &buf1, &mut buf2);
+    matrix_apply_inplace(&mut buf2, &NeuralNetwork::sigmoid);
+
+    buf2
 }
 
 } // impl NeuralNetwork

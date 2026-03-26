@@ -5,7 +5,7 @@ use std::path::Path;
 
 pub fn read_images(path: &Path) -> Vec<Matrix> {
 
-    let bytes = match fs::read(path) {
+    let bytes = match fs::read(&path) {
         Err(why) => panic!("couldn't read {}: {}:", path.display(), why),
         Ok(file) => file,
     };
@@ -33,20 +33,19 @@ pub fn read_images(path: &Path) -> Vec<Matrix> {
     for _image in 0..num_images {
         let mut picture : Vec<f32> = Vec::with_capacity((rows * cols) as usize);
 
-        end = start + (rows*cols) as usize;
-
+        end = start + 28*28;
         for byte in bytes[start..end].iter() {
             picture.push(*byte as f32 / 255.0);
         }
 
-        all_images.push(Matrix::new((rows*cols) as usize, 1, picture));
+        all_images.push(Matrix::new((rows * cols) as usize, 1, picture));
 
         start = end;
     }
     all_images
 }
 
-pub fn read_labels(path: &Path) -> Vec<Matrix>{
+pub fn read_labels(path: &Path) -> Vec<Matrix> {
     let bytes = match fs::read(&path) {
         Err(why) => panic!("couldn't read {}: {}:", path.display(), why),
         Ok(file) => file,
@@ -63,12 +62,15 @@ pub fn read_labels(path: &Path) -> Vec<Matrix>{
 
     let mut labels : Vec<Matrix> = Vec::with_capacity(num_labels as usize);
 
-    // this encodes as hot-one 
+    // this encodes as hot-one
     for byte in bytes[8..8+num_labels].iter() {
         let target = *byte as f32;
+
         let mut encoded = vec![0.0; 10];
         encoded[target as usize] = 1.0;
+        
         labels.push(Matrix::new(10, 1, encoded));
     }
+    
     labels
 }
