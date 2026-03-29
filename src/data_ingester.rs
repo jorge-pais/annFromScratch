@@ -66,8 +66,8 @@ pub fn read_labels(path: &Path) -> Vec<Matrix> {
     for byte in bytes[8..8+num_labels].iter() {
         let target = *byte as f32;
 
-        let mut encoded = vec![0.0; 10];
-        encoded[target as usize] = 1.0;
+        let mut encoded = vec![0.01; 10];
+        encoded[target as usize] = 0.99;
         
         labels.push(Matrix::new(10, 1, encoded));
     }

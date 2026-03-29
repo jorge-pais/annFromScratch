@@ -12,7 +12,7 @@ use raylib::consts::{TraceLogLevel, KeyboardKey};
 
 use crate::neural_network::NeuralNetwork;
 
-fn render_matrix(images: Vec<Matrix>, labels: Vec<Matrix>, network: &NeuralNetwork) {
+fn render_matrix(images: Vec<Matrix>, labels: Vec<Matrix>, predictions: Vec<Matrix>) {
     let (mut rl, thread) = raylib::init()
         .size(800, 800)
         .title("Matrix")
@@ -23,12 +23,9 @@ fn render_matrix(images: Vec<Matrix>, labels: Vec<Matrix>, network: &NeuralNetwo
 
     let mut index : usize = 0;
 
-    let mut prediction : Matrix = network.predict(&images[0]);
-
     while !rl.window_should_close() {
         if rl.is_key_pressed(KeyboardKey::KEY_SPACE){
             index += 1;
-            prediction = network.predict(&images[index]);
         }
 
         let mut d = rl.begin_drawing(&thread);
@@ -37,6 +34,7 @@ fn render_matrix(images: Vec<Matrix>, labels: Vec<Matrix>, network: &NeuralNetwo
 
         let m1 : &Matrix = &images[index];
         let label = &labels[index];
+        let prediction = &predictions[index];
 
         for row in 0..28 as i32 {
             for col in 0..28 as i32{
@@ -50,18 +48,25 @@ fn render_matrix(images: Vec<Matrix>, labels: Vec<Matrix>, network: &NeuralNetwo
                         m1.get_reshaped(row as usize, col as usize, 28, 28)
                     )
                 );
+                // debug: print each location on the matrix
                 // d.draw_text(&format!("({:02},{:02})", row, col), col*BLOCK_SIZE+BLOCK_SIZE/2, row*BLOCK_SIZE+BLOCK_SIZE/2, 1, Color::GREEN);
             }
         }
         d.draw_text(&format!("Index: {:}", index), 20, 580, 10, Color::WHITE);
-        let mut num_label : usize = 0;
-        for i in 0..label.rows{
-            if label.get(i, 0) == 1.0 {
-                num_label = i;
-            }
+        d.draw_text(&format!("Target: {:1.0}", argmax(label)), 20, 600, 10, Color::WHITE);
+        d.draw_text(&format!("prediction: {:?}", argmax(prediction)), 20, 620, 10, Color::WHITE);
+
+        for i in 0..predictions[index].rows {
+            let height = (200.0 * predictions[index].get(i, 0)) as i32;
+            d.draw_rectangle(
+                500 + i as i32 * 16,
+                400 - height,
+                14,
+                height,
+                Color::WHITE
+            );
+            d.draw_text(&format!("{:}", i), 504 + i as i32 * 16, 410, 10, Color::WHITE);
         }
-        d.draw_text(&format!("Target: {:1.0}", num_label), 20, 600, 10, Color::WHITE);
-        d.draw_text(&format!("prediction: {:?}", prediction), 20, 620, 10, Color::WHITE);
     }
 }
 
@@ -73,14 +78,26 @@ fn main() {
 
     println!("Training data successfully loaded");
 
-    let mut nn = NeuralNetwork::new(28*28, 200, 10);
+    let mut nn = NeuralNetwork::new(28*28, 300, 10);
 
-    // nn.fit(train_images, train_labels, 0.01, 1);
-    nn.fit(train_images[0..2000].to_vec(), train_labels[0..2000].to_vec(), 0.01, 5);
-    // nn.fit(train_images[0..1].to_vec(), train_labels[0..1].to_vec(), 0.01, 1);
+    nn.fit(train_images, train_labels, 0.1, 1);
+    // nn.fit(train_images[0..10000].to_vec(), train_labels[0..10000].to_vec(), 0.01, 5);
 
     let test_images = read_images(Path::new("data/t10k-images-idx3-ubyte"));
     let test_labels = read_labels(Path::new("data/t10k-labels-idx1-ubyte"));
 
-    render_matrix(test_images, test_labels, &nn);
+    let mut predictions : Vec<Matrix> = Vec::with_capacity(test_labels.len());
+
+    let mut correct = 0.0;
+    for i in 0..test_labels.len() {
+        let prediction = nn.predict(&test_images[i]);
+        if argmax(&prediction) == argmax(&test_labels[i]) {
+            correct += 1.0;
+        }
+        predictions.push(prediction);
+    }
+
+    println!("Accuracy: {:}", 100.0 * correct / (test_labels.len() as f32));
+
+    render_matrix(test_images, test_labels, predictions);
 }

@@ -12,12 +12,12 @@ impl Matrix{
 
     pub fn new_empty(rows: usize, cols: usize) -> Self{
         let data = vec![0.0; rows*cols];
-        Self{data , rows, cols} // when return no semicolon idiot
+        Self{data, rows, cols} 
     }
 
     pub fn new(rows: usize, cols: usize, data: Vec<f32>) -> Self{
         assert_eq!(rows*cols, data.len(), "data length must match matrix dimensions");
-        Self{data, rows, cols} // when return no semicolon idiot
+        Self{data, rows, cols} 
     }
 
     pub fn random(rows: usize, cols: usize) -> Self {
@@ -64,6 +64,10 @@ pub fn dot_into(m1: &Matrix, m2: &Matrix, out: &mut Matrix) {
     assert!(m1.cols == m2.rows,  "Operand matrix dimensions are not compatible");
     assert!(m1.rows == out.rows && m2.cols == out.cols, "Result matrix dimensions are not compatible");
 
+    for x in out.data.iter_mut() {
+        *x = 0.0;
+    }
+
     // loop order is i-k-j such that we get better use of cache locality 
     // when accessing m2. I would the compiler sees this better than I do
     for i in 0..m1.rows {
@@ -82,7 +86,7 @@ pub fn multiply_into(m1: &Matrix, m2: &Matrix, out: &mut Matrix) {
     for i in 0..m1.rows {
         for j in 0..m1.cols {
             let index = i * m1.cols + j;
-            out.data[index] = m1.get(i, j) * m2.get(i, j);
+            out.data[index] = m1.data[index] * m2.data[index];
         }
     }
 }
@@ -115,6 +119,33 @@ pub fn transpose(m: &Matrix) -> Matrix {
 
 pub fn matrix_flatten(m1: &Matrix) -> Matrix {
     Matrix::new(m1.rows * m1.cols, 1, m1.data.clone())
+}
+
+// this will apply a softmax to the result directly
+pub fn softmax(m1: &mut Matrix) {
+    let mut total : f32 = 0.0;
+
+    for i in 0..m1.data.len() {
+        total += f32::exp(m1.data[i]);
+    }
+
+    for i in 0..m1.data.len(){
+        m1.data[i] = f32::exp(m1.data[i]) / total;
+    }
+}
+
+pub fn argmax(m1: &Matrix) -> usize {
+    let mut max_score : f32 = 0.0;
+    let mut max_index : usize = 0;
+
+    for i in 0..m1.data.len() {
+        if m1.data[i] > max_score {
+            max_score = m1.data[i];
+            max_index = i;
+        }
+    }
+
+    max_index
 }
 
 // fn test_matrix() {
