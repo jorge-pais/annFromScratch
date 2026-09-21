@@ -53,7 +53,7 @@ pub fn read_labels(path: &Path) -> Vec<Matrix> {
 
     // first two bytes are always zero
     // then this should be 0x08 specifying a unsigned byte
-    // new bytes is the number of dimensions
+    // next bytes are the number of dimensions
     let magic_number = u32::from_be_bytes(bytes[0..4].try_into().unwrap());
     assert_eq!(magic_number, 0x00000801u32);
 

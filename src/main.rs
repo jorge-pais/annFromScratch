@@ -80,8 +80,8 @@ fn main() {
 
     let mut nn = NeuralNetwork::new(28*28, 300, 10);
 
-    nn.fit(train_images, train_labels, 0.1, 1);
-    // nn.fit(train_images[0..10000].to_vec(), train_labels[0..10000].to_vec(), 0.01, 5);
+    // nn.fit(train_images, train_labels, 0.1, 1);
+    nn.fit(train_images[0..10000].to_vec(), train_labels[0..10000].to_vec(), 0.01, 5);
 
     let test_images = read_images(Path::new("data/t10k-images-idx3-ubyte"));
     let test_labels = read_labels(Path::new("data/t10k-labels-idx1-ubyte"));

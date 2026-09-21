@@ -9,7 +9,6 @@ pub struct Matrix {
 }
 
 impl Matrix{
-
     pub fn new_empty(rows: usize, cols: usize) -> Self{
         let data = vec![0.0; rows*cols];
         Self{data, rows, cols} 
